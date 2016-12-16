@@ -1,0 +1,157 @@
+Genetic Algorithm for Musical Composition
+By: Ari Brown
+Date: December 2, 2016
+
+---------- Purpose ----------------
+This program uses a genetic algorithm to arrive at melody lines
+that sound good (in relation to Western Classical music theory),
+by starting out at randomness and optimizing breeding of melody
+lines by use of many music theory principles and theory related
+mutations.
+
+---------- Compile/Run ------------
+The Genetic Algorithm can be compiled by entering the
+project's main directory and typing "make"
+
+This will create the executable file "breed" which can
+be run from terminal by typing ./breed
+
+Output MIDI data is saved to a text file in the output folder,
+and can be converted to MIDI format using the provided file
+named "txt2midi.matpat".  This is the standard patch format used
+in the MAX/MSP coding language, which is used often to produce
+audio modules to be used in audio editing software. Once the MIDI
+file has been created, it can be opened by a standard MIDI reader
+(aka Finale NotePad to convert to muscial score, or any Digital Audio
+Interface program like GarageBand, Logic, ProTools, or Ableton to 
+assign an instrument to the MIDI pattern and hear the music).
+
+--------- Abstractions/Files ------
+
+GenAlgo (.h/.cpp):
+    - Class that defines the genetic algorithm
+    - Contains a run function that will invoke the whole algorithm
+    - Holds a GenerationQueue which stores a specified amount
+        of generations in memory at any given time
+    - Stores the best melody found over all generations
+GenerationPopulation (.h/.cpp):
+    - Class that holds a full generation of melodies,
+        an array of MelodyNode abstractions
+    - Overloaded constructor can breed a whole new generation
+        from a generation of parents passed in
+GenerationQueue (.h/.cpp):
+    - Class holds a queue of GenerationPopulations
+    - Initializes the first generation at creation
+    - The queue is a circular buffer behind the scene, and will
+        only store a specified amount of generations and then
+        start overwriting memory at each insert
+    - Responsible for updating the oldest generation's parents
+        to NULL
+melody (.h/.cpp):
+    - Class that holds a melody, which is an array of Note
+        abstractions
+    - Overloaded constructor can breed a new melody when
+        two parent melody pointers are passed in
+    - The melody can call mutations on itself, using the defined
+        chance of mutations in constants.h:
+            rhythmically redistribute two notes, smooth by placing
+            notes closest to average, smooth by placing notes closest
+            to previous note
+    - A melody breeds by copying sections of the rhythm/melody from
+        either parent based on chance, this happens in a defined
+        window of notes iteratively
+melody2midi (.h):
+    - function definition that converts a Melody's data into
+        a MIDI convertible text file and saves to output folder
+MelodyNode (.h/.cpp):
+    - MelodyNode class holds one Melody, and pointer to the
+        parents and children of that node, used to create
+        a graph of a family of melodies
+    - MelodyNode overloaded constructor will breed a new MelodyNode
+        given pointers to two parent MelodyNodes
+Note (.h/.cpp):
+    - Note class that contains note data:
+        duration (quarter=0.25), pitch (0-11), octave(1-5), rest,
+        absolute pitch number, and scale degree (0-11)
+    - Note can mutate itself depending on the chances defined in
+        constants.h:
+            change note by half step up or down, whole step up
+            or down, octave up or down, or by flipping rest
+otherfuncs (.h/.cpp):
+    - pitch2string converts pitch number to string depending on
+        whether the key is sharp or flat
+    - roulette wheel decides an index based on array of probabilites
+    - check if a pitch is in a scale, lookup function
+    - check if an integer is in an array
+constants (.h):
+    - Music theory definitions: notes, chords, chord progressions
+    - Chances of different mutations in the algorithm
+    - Points to assign to different parts of the scoring system
+    - Other definitions including note windowing sizes
+options (.h):
+    - Defines some external variables that can be manipulated
+        at program start in main.cpp as user options to the
+        algorithm:
+            Amount of notes per melody, amount of melodies per
+            generation, amount of GA iterations, amount of
+            generations saved, key, output file name
+score (.h):
+    - Scoring class that takes in a melody to an overloaded
+        constructor and will assign it a score
+    - get_score() is public function used to access the 
+        newly computed score
+    - Score is based on the following:
+        How many notes fit in key, how many windows of notes
+        imply chords, the order of those implied chords,
+        how smooth the notes are by pitch regardless of octave,
+        how smooth the notes are by pitch and octave
+termfuncs (.h/.cpp):
+    - file created by Chriss Gregg (Comp11, Spring2016) that
+        handles generating random integer
+Makefile:
+    - compile the program
+Documentation (.pdf/.docx):
+    - Project specification
+
+---------- Data Structures ---------
+    The genetic algorithm uses a graph structure to map
+out parents to children MelodyNodes. This graph structure
+enables the storing of relationships between nodes, so the
+process of how a certain melody was created can be traced back
+if desired.
+    The generations are stored in a queue of generations, which
+is really just a circular buffer that will only hold a specified
+maximum amount of generations in memory, so that the program
+does not crash while running for a very long time. In this
+respect, we can "pop" the oldest generation and "push" the newest,
+a first in - first out style structure
+    The generations also each store the melodies in arrays,
+which helps speed up the algorithm because indexing an array
+takes constant time.  It would be very cost worthy to decide two
+melodies to breed if they were only stored in a graph, because we
+would need to reference an arbitrary node and recurse through
+all others. The arrays enable breadth first search
+
+---------- Geentic Algorithm -------
+The genetic algorithm will work to “breed” the best sounding
+ melodies through a simulation of generations of evolution, in
+  which natural selection takes place and the better “more fit”
+   melodies are more likely to survive and reproduce.  The 
+   algorithm will work as follows:
+•   Start out with an initial population of melodies of a given size
+•   Assign a score to each melody based on the music theory traits
+•   Choose two melodies at random from a probability distribution
+ that is roulette wheel style (melodies that have a higher score 
+ are more likely to be picked)
+•   Breed those two melodies, creating a new child melody, which 
+will include half of the traits from one parent melody and half
+ from the other, mutations are also incorporated here
+•   Repeat the process of breeding between two parents until the
+ next generation target size has been filled
+•   Repeat all of the steps with the newly created generations, 
+until stop conditions have been met
+*Note about stop condition: the stop condition is
+ user-specified, where a certain amount of generations to run 
+ through is predetermined
+
+
